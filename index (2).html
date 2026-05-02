@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Al Arrab — Account Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+/* ══════════════════════════════════════════════
+   TOKENS
+══════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --sidebar-w:228px;
+  --header-h:54px;
+  --font:'IBM Plex Sans Arabic',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+  --bg:#f0f2f7;
+  --surface:#ffffff;
+  --border:#e2e5ef;
+  --text:#111827;
+  --muted:#6b7280;
+  --accent:#2563eb;
+  --accent-light:#eff6ff;
+  --accent-dark:#1d4ed8;
+  --success:#059669;
+  --success-bg:#ecfdf5;
+  --warn:#d97706;
+  --warn-bg:#fffbeb;
+  --danger:#dc2626;
+  --danger-bg:#fef2f2;
+  --vip:#7c3aed;
+  --vip-bg:#f5f3ff;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 16px rgba(0,0,0,.1);
+  --r:8px;
+  --r-lg:12px;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13.5px;line-height:1.5;min-height:100vh}
+#app{display:flex;height:100vh;overflow:hidden}
+
+/* ── SIDEBAR ── */
+#sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;overflow-x:hidden}
+.sb-brand{padding:16px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sb-logo{width:34px;height:34px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:var(--mono);font-weight:700;font-size:12px;color:#fff;letter-spacing:-.5px}
+.sb-brand-text{line-height:1.25}
+.sb-brand-name{font-size:13px;font-weight:700;color:var(--text)}
+.sb-brand-sub{font-size:10.5px;color:var(--muted)}
+.sb-section{padding:14px 14px 4px;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.9px;text-transform:uppercase}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 6px;border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--muted);transition:all .14s;font-weight:500;user-select:none}
+.sb-item:hover{background:var(--bg);color:var(--text)}
+.sb-item.active{background:var(--accent-light);color:var(--accent);font-weight:600}
+.sb-item svg{width:15px;height:15px;flex-shrink:0}
+.sb-badge{margin-left:auto;background:var(--danger);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center;line-height:1.6}
+.sb-badge.b-warn{background:var(--warn)}
+.sb-badge.b-info{background:var(--accent)}
+.sb-footer{margin-top:auto;padding:12px 10px;border-top:1px solid var(--border)}
+.sb-user{display:flex;align-items:center;gap:9px;padding:9px 10px;background:var(--bg);border-radius:var(--r)}
+.sb-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.sb-user-info{line-height:1.3}
+.sb-user-name{font-size:12px;font-weight:600}
+.sb-user-role{font-size:10px;color:var(--muted)}
+
+/* ── MAIN ── */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#topbar{height:var(--header-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+.tb-title{font-size:15px;font-weight:700;flex:1}
+.tb-date{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.tb-notif{position:relative;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);transition:.14s}
+.tb-notif:hover{background:var(--bg)}
+.tb-notif svg{width:15px;height:15px;color:var(--muted)}
+.tb-notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--danger);border-radius:50%;border:1.5px solid #fff}
+.tb-btn{padding:7px 16px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);transition:.14s;display:none}
+.tb-btn:hover{background:var(--accent-dark)}
+.tb-sync{padding:6px 12px;background:var(--surface);color:var(--muted);border:1px solid var(--border);border-radius:var(--r);font-size:12px;font-weight:500;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:5px;transition:.14s}
+.tb-sync:hover{background:var(--bg);color:var(--text)}
+.tb-sync.syncing svg{animation:spin .7s linear infinite}
+
+#content{flex:1;overflow-y:auto;padding:20px;overflow-x:hidden}
+
+/* ── STAT CARDS ── */
+.stat-grid{display:grid;gap:12px;margin-bottom:16px}
+.g-4{grid-template-columns:repeat(4,1fr)}
+.g-5{grid-template-columns:repeat(5,1fr)}
+.g-3{grid-template-columns:repeat(3,1fr)}
+.stat-card{background:var(--surface);border-radius:var(--r-lg);padding:15px 16px;border:1px solid var(--border);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.stat-card.clickable{cursor:pointer;transition:.15s}
+.stat-card.clickable:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.stat-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.stat-val{font-size:24px;font-weight:700;color:var(--text);line-height:1.1;font-family:var(--mono)}
+.stat-sub{font-size:11.5px;color:var(--muted);margin-top:4px}
+.stat-icon{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.stat-icon svg{width:16px;height:16px}
+.si-blue{background:var(--accent-light);color:var(--accent)}
+.si-green{background:var(--success-bg);color:var(--success)}
+.si-warn{background:var(--warn-bg);color:var(--warn)}
+.si-danger{background:var(--danger-bg);color:var(--danger)}
+.si-vip{background:var(--vip-bg);color:var(--vip)}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border-radius:var(--r-lg);padding:16px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:700;color:var(--text)}
+.chart-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:16px}
+
+/* ── TABLE ── */
+.tbl-wrap{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden}
+.tbl-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.tbl-title{font-size:14px;font-weight:700;flex:1;min-width:200px}
+.tbl-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tbl-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:700px}
+th{background:#f8f9fc;padding:9px 12px;text-align:left;font-weight:600;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+th:hover{color:var(--accent)}
+td{padding:9px 12px;border-bottom:1px solid #f1f3f9;color:var(--text);vertical-align:middle;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbff}
+tr.row-danger td{background:#fff8f8}
+tr.row-warn td{background:#fffdf0}
+tr.row-success td{background:#f8fffe}
+
+/* ── INPUTS ── */
+input[type=text],input[type=date],input[type=number],select,textarea{
+  padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);
+  font-size:13px;font-family:var(--font);color:var(--text);background:var(--surface);
+  outline:none;transition:.14s
+}
+input[type=text]:focus,input[type=date]:focus,input[type=number]:focus,
+select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+input[type=text]{min-width:180px}
+select{min-width:130px}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-active{background:var(--success-bg);color:var(--success)}
+.b-inactive{background:#f1f5f9;color:var(--muted)}
+.b-vip{background:var(--vip-bg);color:var(--vip)}
+.b-normal{background:#f1f5f9;color:#475569}
+.b-pending{background:var(--warn-bg);color:var(--warn)}
+.b-delayed,.b-overdue,.b-missed,.b-lost{background:var(--danger-bg);color:var(--danger)}
+.b-submitted,.b-paid,.b-done,.b-renewed{background:var(--success-bg);color:var(--success)}
+.b-partial{background:#dbeafe;color:#1d4ed8}
+.b-onhold{background:#f1f5f9;color:#64748b}
+.b-cancelled{background:#f1f5f9;color:#94a3b8}
+.b-seo{background:#d1fae5;color:#065f46}
+.b-socialmedia,.b-social{background:#dbeafe;color:#1d4ed8}
+.b-ads{background:#fee2e2;color:#991b1b}
+.b-website{background:#ede9fe;color:#5b21b6}
+.b-today{background:#fffbeb;color:#92400e;border:1px solid #fcd34d}
+.b-upcoming{background:#f0fdf4;color:#166534}
+
+/* ── PAGINATION ── */
+.pagination{display:flex;align-items:center;gap:6px;padding:10px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+.pg-btn{padding:4px 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);cursor:pointer;font-size:12px;font-family:var(--font);transition:.13s}
+.pg-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pg-btn:hover:not(.active){background:var(--bg)}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.modal-box{background:var(--surface);border-radius:var(--r-lg);padding:24px;width:560px;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow-md)}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{cursor:pointer;font-size:20px;color:var(--muted);line-height:1;padding:2px 6px;border-radius:4px;transition:.13s}
+.modal-close:hover{background:var(--bg);color:var(--text)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-field{display:flex;flex-direction:column;gap:5px}
+.form-field.full{grid-column:1/-1}
+.form-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.form-field input,.form-field select,.form-field textarea{padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-family:var(--font);color:var(--text);width:100%;outline:none}
+.form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:var(--accent)}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}
+.btn{padding:8px 18px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);border:none;transition:.14s}
+.btn-cancel{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.btn-cancel:hover{background:var(--bg)}
+.btn-save{background:var(--accent);color:#fff}
+.btn-save:hover{background:var(--accent-dark)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:#b91c1c}
+
+/* ── ALERTS ── */
+.alert-bar{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:var(--r);font-size:12.5px;font-weight:500;margin-bottom:8px}
+.alert-danger{background:#fff5f5;border:1px solid #fecaca;color:#991b1b}
+.alert-warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+.alert-info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
+.alert-bar svg{width:14px;height:14px;flex-shrink:0}
+
+/* ── PERF ROWS ── */
+.mgr-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.mgr-row:last-child{border:none}
+.mgr-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:#fff;flex-shrink:0}
+.mgr-info{flex:1;min-width:0}
+.mgr-name{font-weight:600;font-size:13px}
+.mgr-sub{font-size:11px;color:var(--muted)}
+.pbar{height:5px;background:#e5e7eb;border-radius:4px;overflow:hidden;margin-top:5px;width:160px}
+.pfill{height:100%;border-radius:4px;background:var(--accent);transition:width .4s}
+.mgr-nums{display:flex;gap:16px;flex-shrink:0}
+.mgr-num{text-align:center}
+.mgr-num-val{font-size:15px;font-weight:700;font-family:var(--mono)}
+.mgr-num-lbl{font-size:10px;color:var(--muted);font-weight:500}
+
+/* ── EMPTY ── */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px;color:var(--muted);text-align:center;gap:8px}
+.empty-icon{font-size:36px;opacity:.3}
+
+/* ── LOADING ── */
+.loader{display:flex;align-items:center;justify-content:center;height:220px;color:var(--muted);gap:8px;font-size:13px}
+.spin-ring{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin-ring,.tb-sync.syncing svg{animation:spin .7s linear infinite}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;right:24px;z-index:2000;display:flex;flex-direction:column;gap:8px}
+.toast-item{padding:10px 16px;border-radius:var(--r);font-size:13px;font-weight:500;box-shadow:var(--shadow-md);animation:slideIn .2s ease;max-width:320px}
+.toast-success{background:#059669;color:#fff}
+.toast-error{background:#dc2626;color:#fff}
+.toast-info{background:#2563eb;color:#fff}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ── CONFIG BANNER ── */
+#config-banner{display:flex;align-items:center;justify-content:space-between;background:#fff7ed;border:1px solid #fed7aa;border-radius:var(--r);padding:10px 16px;margin-bottom:16px;font-size:13px;color:#9a3412}
+#config-banner strong{font-weight:700}
+#config-banner input{padding:5px 9px;border:1px solid #fdba74;border-radius:6px;font-size:12px;width:320px;font-family:var(--mono)}
+#config-banner button{padding:5px 14px;background:#ea580c;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sb-brand">
+      <div class="sb-logo">AA</div>
+      <div class="sb-brand-text">
+        <div class="sb-brand-name">Al Arrab Agency</div>
+        <div class="sb-brand-sub">Account Management</div>
+      </div>
+    </div>
+
+    <div style="padding:6px 0 4px">
+      <div class="sb-section">Main</div>
+      <div class="sb-item active" data-page="dashboard" onclick="nav('dashboard')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </div>
+
+      <div class="sb-section">Management</div>
+      <div class="sb-item" data-page="clients" onclick="nav('clients')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Clients
+        <span class="sb-badge b-info" id="badge-clients">—</span>
+      </div>
+      <div class="sb-item" data-page="reports" onclick="nav('reports')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+        Reports
+        <span class="sb-badge" id="badge-reports">—</span>
+      </div>
+      <div class="sb-item" data-page="followups" onclick="nav('followups')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Follow-ups
+        <span class="sb-badge b-warn" id="badge-followups">—</span>
+      </div>
+      <div class="sb-item" data-page="renewals" onclick="nav('renewals')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Renewals
+        <span class="sb-badge b-warn" id="badge-renewals">—</span>
+      </div>
+      <div class="sb-item" data-page="contracts" onclick="nav('contracts')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="12" y1="17" x2="8" y2="17"/></svg>
+        Contracts
+        <span class="sb-badge" id="badge-contracts">—</span>
+      </div>
+
+      <div class="sb-section">Analytics</div>
+      <div class="sb-item" data-page="performance" onclick="nav('performance')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Performance
+      </div>
+      <div class="sb-item" data-page="team" onclick="nav('team')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Team
+      </div>
+    </div>
+
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-avatar" id="user-av">??</div>
+        <div class="sb-user-info">
+          <div class="sb-user-name" id="user-name">Loading…</div>
+          <div class="sb-user-role" id="user-role">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div id="topbar">
+      <div class="tb-title" id="tb-title">Dashboard</div>
+      <div class="tb-date" id="tb-date"></div>
+      <button class="tb-sync" id="sync-btn" onclick="syncData()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Sync
+      </button>
+      <button class="tb-btn" id="add-btn">+ Add</button>
+    </div>
+    <div id="content">
+      <div class="loader"><div class="spin-ring"></div> Connecting to Google Sheets…</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal" style="display:none">
+  <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal-box" id="modal-box"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════════════════
+//  CONFIG — PASTE YOUR APPS SCRIPT WEB APP URL HERE
+// ══════════════════════════════════════════════════════════
+let API_URL = localStorage.getItem('amms_api_url') || '';
+
+// ══════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════
+const STATE = {
+  page: 'dashboard',
+  clients: [], team: [], reports: [], followups: [], contracts: [],
+  dashboard: null, alerts: [],
+  loaded: {},
+  filters: {
+    clients:   { search:'', service:'All', priority:'All', manager:'All', status:'All', page:1 },
+    reports:   { status:'All', type:'All', manager:'All', page:1 },
+    followups: { status:'All', manager:'All', page:1 },
+    renewals:  { status:'All', page:1 },
+    contracts: { search:'', status:'All', payment:'All', page:1 }
+  },
+  PER_PAGE: 18
+};
+
+const PALETTE = ['#2563eb','#7c3aed','#059669','#d97706','#dc2626','#0284c7','#0891b2','#65a30d','#db2777','#9333ea','#16a34a','#ca8a04'];
+
+// ══════════════════════════════════════════════════════════
+//  API LAYER
+// ══════════════════════════════════════════════════════════
+async function api(action, params = {}) {
+  if (!API_URL) throw new Error('NO_URL');
+  const qs = new URLSearchParams({ action, ...params }).toString();
+  const res = await fetch(`${API_URL}?${qs}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'API error');
+  return json.data;
+}
+
+async function apiPost(action, payload = {}) {
+  if (!API_URL) throw new Error('NO_URL');
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...payload })
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'API error');
+  return json.data;
+}
+
+// ══════════════════════════════════════════════════════════
+//  DATA LOADING
+// ══════════════════════════════════════════════════════════
+async function loadAll() {
+  if (!API_URL) { renderConfigBanner(); return; }
+  setSyncing(true);
+  try {
+    const [dash, clients, team, reports, followups, contracts, alerts] = await Promise.all([
+      api('getDashboard'),
+      api('getClients'),
+      api('getTeam'),
+      api('getReports'),
+      api('getFollowUps'),
+      api('getContracts'),
+      api('getAlerts')
+    ]);
+    STATE.dashboard  = dash;
+    STATE.clients    = clients;
+    STATE.team       = team;
+    STATE.reports    = reports;
+    STATE.followups  = followups;
+    STATE.contracts  = contracts;
+    STATE.alerts     = alerts;
+    updateBadges();
+    renderPage();
+    toast('Synced with Google Sheets', 'success');
+  } catch(e) {
+    console.error(e);
+    if (e.message === 'NO_URL') { renderConfigBanner(); return; }
+    toast('Sync failed: ' + e.message, 'error');
+    renderPage(); // render with empty state
+  } finally {
+    setSyncing(false);
+  }
+}
+
+async function syncData() {
+  STATE.loaded = {};
+  await loadAll();
+}
+
+// ══════════════════════════════════════════════════════════
+//  BADGES
+// ══════════════════════════════════════════════════════════
+function updateBadges() {
+  const d = STATE.dashboard;
+  if (!d) return;
+  setText('badge-clients',   d.totalClients || 0);
+  setText('badge-reports',   d.overdueReports || 0);
+  setText('badge-followups', d.todayFollowUps || 0);
+  setText('badge-renewals',  d.nearRenewal || 0);
+  setText('badge-contracts', d.overduePayments || 0);
+}
+
+// ══════════════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════════════
+const PAGE_TITLES = {
+  dashboard:   'Main Dashboard',
+  clients:     'Clients',
+  reports:     'Reports',
+  followups:   'Follow-ups',
+  renewals:    'Renewals',
+  contracts:   'Contracts & Revenue',
+  performance: 'Performance',
+  team:        'Team Management'
+};
+const ADD_PAGES = { clients: true, reports: true, followups: true, contracts: true, team: true };
+
+function nav(page) {
+  STATE.page = page;
+  document.querySelectorAll('.sb-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === page);
+  });
+  setText('tb-title', PAGE_TITLES[page] || page);
+  const addBtn = document.getElementById('add-btn');
+  addBtn.style.display = ADD_PAGES[page] ? 'block' : 'none';
+  addBtn.onclick = () => openAddModal(page);
+  destroyCharts();
+  renderPage();
+}
+
+function renderPage() {
+  const p = STATE.page;
+  if (p === 'dashboard')   renderDashboard();
+  else if (p === 'clients')     renderClients();
+  else if (p === 'reports')     renderReports();
+  else if (p === 'followups')   renderFollowups();
+  else if (p === 'renewals')    renderRenewals();
+  else if (p === 'contracts')   renderContracts();
+  else if (p === 'performance') renderPerformance();
+  else if (p === 'team')        renderTeam();
+}
+
+// ══════════════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════════════
+function renderDashboard() {
+  const d = STATE.dashboard;
+  const el = document.getElementById('content');
+  if (!d) { el.innerHTML = loader(); return; }
+
+  const fmtEGP = n => 'EGP ' + Math.round(n).toLocaleString('en');
+
+  el.innerHTML = `
+  ${renderAlertBars(STATE.alerts.slice(0, 4))}
+  <div class="stat-grid g-4">
+    ${statCard('Total Clients', d.totalClients, d.activeClients + ' active', 'si-blue', iconUsers())}
+    ${statCard('VIP Clients', d.vipClients, 'Priority accounts', 'si-vip', iconStar())}
+    ${statCard('Near Renewal', d.nearRenewal, 'Within 30 days', 'si-warn', iconRefresh())}
+    ${statCard('Overdue Reports', d.overdueReports, d.pendingReports + ' pending', 'si-danger', iconFile())}
+  </div>
+  <div class="stat-grid g-4" style="margin-bottom:18px">
+    ${statCard("Today's Follow-ups", d.todayFollowUps, d.missedFollowUps + ' missed', 'si-warn', iconCalendar())}
+    ${statCard('Active Contracts', d.activeContracts, d.lostClients + ' lost', 'si-green', iconDoc())}
+    ${statCard('Overdue Payments', d.overduePayments, 'Needs collection', 'si-danger', iconMoney())}
+    ${statCard('Monthly Revenue', fmtEGP(d.monthlyRevenue), fmtEGP(d.totalRevenue) + ' total', 'si-green', iconMoney())}
+  </div>
+  <div class="chart-grid">
+    <div class="card"><div class="card-head"><div class="card-title">Clients per Manager</div></div><div style="position:relative;height:200px"><canvas id="ch1"></canvas></div></div>
+    <div class="card"><div class="card-head"><div class="card-title">Services Distribution</div></div><div style="position:relative;height:200px"><canvas id="ch2"></canvas></div></div>
+    <div class="card"><div class="card-head"><div class="card-title">Reports Status</div></div><div style="position:relative;height:200px"><canvas id="ch3"></canvas></div></div>
+    <div class="card"><div class="card-head"><div class="card-title">Contract Status</div></div><div style="position:relative;height:200px"><canvas id="ch4"></canvas></div></div>
+  </div>`;
+
+  setTimeout(() => {
+    if (!d.managerStats) return;
+    const names = d.managerStats.map(m => m.name.split(' ')[0]);
+    const colors = d.managerStats.map((_, i) => PALETTE[i % PALETTE.length]);
+    mkChart('ch1', 'bar', names, [{ label: 'Clients', data: d.managerStats.map(m => m.clients), backgroundColor: colors, borderRadius: 4 }], { legend: false });
+    const svc = d.serviceBreakdown || {};
+    mkChart('ch2', 'doughnut', Object.keys(svc), [{ data: Object.values(svc), backgroundColor: PALETTE.slice(0, 5), borderWidth: 2 }], { legend: 'right' });
+    mkChart('ch3', 'bar', ['Submitted', 'Pending', 'Delayed'],
+      [{ data: [d.submittedReports, d.pendingReports, d.overdueReports], backgroundColor: ['#059669', '#d97706', '#dc2626'], borderRadius: 4 }], { legend: false });
+    const cContracts = STATE.contracts;
+    const cCounts = ['Active','Renewed','Lost','On Hold','Cancelled'].map(s => cContracts.filter(c => c.contractStatus === s).length);
+    mkChart('ch4', 'bar', ['Active','Renewed','Lost','On Hold','Cancelled'],
+      [{ data: cCounts, backgroundColor: ['#059669','#7c3aed','#dc2626','#d97706','#94a3b8'], borderRadius: 4 }], { legend: false });
+  }, 80);
+}
+
+// ══════════════════════════════════════════════════════════
+//  CLIENTS
+// ══════════════════════════════════════════════════════════
+function renderClients() {
+  const f = STATE.filters.clients;
+  let rows = [...STATE.clients];
+  if (f.search)   rows = rows.filter(r => `${r.clientName} ${r.companyName} ${r.id}`.toLowerCase().includes(f.search.toLowerCase()));
+  if (f.service !== 'All')  rows = rows.filter(r => r.service === f.service);
+  if (f.priority !== 'All') rows = rows.filter(r => r.priority === f.priority);
+  if (f.manager !== 'All')  rows = rows.filter(r => r.accountManagerId === f.manager);
+  if (f.status !== 'All')   rows = rows.filter(r => r.status === f.status);
+  rows.sort((a, b) => a.clientName.localeCompare(b.clientName));
+
+  const total = rows.length;
+  const pages = Math.ceil(total / STATE.PER_PAGE) || 1;
+  if (f.page > pages) f.page = pages;
+  const slice = rows.slice((f.page - 1) * STATE.PER_PAGE, f.page * STATE.PER_PAGE);
+
+  const el = document.getElementById('content');
+  const mgrOptions = STATE.team.map(t => `<option value="${t.id}" ${f.manager === t.id ? 'selected' : ''}>${t.name}</option>`).join('');
+
+  el.innerHTML = `
+  <div class="tbl-wrap">
+    <div class="tbl-head">
+      <div class="tbl-title">Clients <span style="color:var(--muted);font-weight:400">(${total})</span></div>
+      <div class="tbl-controls">
+        <input type="text" placeholder="Search name, company, ID…" value="${esc(f.search)}" oninput="STATE.filters.clients.search=this.value;STATE.filters.clients.page=1;renderClients()">
+        ${sel('Service', ['All','SEO','Social Media','Ads','Website','قوة العراب'], f.service, "STATE.filters.clients.service=this.value;STATE.filters.clients.page=1;renderClients()")}
+        ${sel('Priority', ['All','Normal','VIP'], f.priority, "STATE.filters.clients.priority=this.value;STATE.filters.clients.page=1;renderClients()")}
+        <select onchange="STATE.filters.clients.manager=this.value;STATE.filters.clients.page=1;renderClients()">
+          <option value="All">All Managers</option>${mgrOptions}
+        </select>
+        ${sel('Status', ['All','Active','Inactive'], f.status, "STATE.filters.clients.status=this.value;STATE.filters.clients.page=1;renderClients()")}
+      </div>
+    </div>
+    <div class="tbl-scroll">
+    <table>
+      <thead><tr>
+        <th>ID</th><th>Client Name</th><th>Company</th><th>Service</th><th>Package</th>
+        <th>Priority</th><th>Manager</th><th>Renewal Date</th><th>Status</th>
+        <th>Monthly Fee</th><th>Next Follow-up</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+        ${slice.length ? slice.map(c => {
+          const daysLeft = daysDiff(c.renewalDate);
+          const rowCls = daysLeft < 0 ? 'row-danger' : daysLeft <= 7 ? 'row-warn' : '';
+          return `<tr class="${rowCls}">
+            <td style="font-family:var(--mono);font-weight:600;color:var(--accent);font-size:12px">${c.id}</td>
+            <td style="font-weight:600">${esc(c.clientName)}</td>
+            <td style="color:var(--muted)">${esc(c.companyName)}</td>
+            <td>${svcBadge(c.service)}</td>
+            <td><span class="badge b-normal">${c.package}</span></td>
+            <td>${prioBadge(c.priority)}</td>
+            <td style="font-size:12px">${esc(c.accountManager)}</td>
+            <td style="font-family:var(--mono);font-size:12px;color:${daysLeft<0?'var(--danger)':daysLeft<=7?'var(--warn)':'var(--text)'}">${c.renewalDate}${daysLeft<0?` <span style="font-size:10px">(${Math.abs(daysLeft)}d overdue)</span>`:daysLeft<=7?` <span style="font-size:10px">(${daysLeft}d)</span>`:''}</td>
+            <td>${statusBadge(c.status)}</td>
+            <td style="font-family:var(--mono)">EGP ${(c.monthlyFee||0).toLocaleString()}</td>
+            <td style="font-size:12px;color:${c.nextFollowup<=today()?'var(--danger)':'var(--muted)'}">${c.nextFollowup||'—'}</td>
+            <td>
+              <button class="btn btn-cancel" style="padding:4px 10px;font-size:11px" onclick='openEditClient(${JSON.stringify(c)})'>Edit</button>
+            </td>
+          </tr>`;
+        }).join('') : `<tr><td colspan="12"><div class="empty"><div class="empty-icon">🔍</div>No clients match your filters</div></td></tr>`}
+      </tbody>
+    </table>
+    </div>
+    ${renderPagination(f.page, pages, "STATE.filters.clients.page=N;renderClients()", total)}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  REPORTS
+// ══════════════════════════════════════════════════════════
+function renderReports() {
+  const f = STATE.filters.reports;
+  let rows = [...STATE.reports];
+  if (f.status !== 'All')  rows = rows.filter(r => r.status === f.status);
+  if (f.type !== 'All')    rows = rows.filter(r => r.reportType === f.type);
+  if (f.manager !== 'All') rows = rows.filter(r => r.accountManagerId === f.manager);
+  rows.sort((a, b) => a.dueDate > b.dueDate ? 1 : -1);
+
+  const total = rows.length;
+  const pages = Math.ceil(total / STATE.PER_PAGE) || 1;
+  if (f.page > pages) f.page = pages;
+  const slice = rows.slice((f.page - 1) * STATE.PER_PAGE, f.page * STATE.PER_PAGE);
+  const mgrOptions = STATE.team.map(t => `<option value="${t.id}" ${f.manager === t.id ? 'selected' : ''}>${t.name}</option>`).join('');
+  const overdue = STATE.reports.filter(r => r.status === 'Delayed').length;
+
+  const el = document.getElementById('content');
+  el.innerHTML = `
+  ${overdue > 0 ? `<div class="alert-bar alert-danger">${iconWarn()} ${overdue} delayed report${overdue>1?'s':''} — immediate action required</div>` : ''}
+  <div class="stat-grid g-3" style="margin-bottom:16px">
+    ${statCard('Submitted', STATE.reports.filter(r=>r.status==='Submitted').length, 'Completed', 'si-green', iconCheck())}
+    ${statCard('Pending', STATE.reports.filter(r=>r.status==='Pending').length, 'Due soon', 'si-warn', iconClock())}
+    ${statCard('Delayed', overdue, 'Overdue reports', 'si-danger', iconWarnBig())}
+  </div>
+  <div class="tbl-wrap">
+    <div class="tbl-head">
+      <div class="tbl-title">Reports Tracker <span style="color:var(--muted);font-weight:400">(${total})</span></div>
+      <div class="tbl-controls">
+        ${sel('Status', ['All','Pending','Submitted','Delayed'], f.status, "STATE.filters.reports.status=this.value;STATE.filters.reports.page=1;renderReports()")}
+        ${sel('Type', ['All','Weekly','Monthly'], f.type, "STATE.filters.reports.type=this.value;STATE.filters.reports.page=1;renderReports()")}
+        <select onchange="STATE.filters.reports.manager=this.value;STATE.filters.reports.page=1;renderReports()">
+          <option value="All">All Managers</option>${mgrOptions}
+        </select>
+      </div>
+    </div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Client</th><th>Service</th><th>Type</th><th>Due Date</th><th>Submitted</th><th>Status</th><th>Manager</th><th>Actions</th></tr></thead>
+      <tbody>
+        ${slice.length ? slice.map(r => `<tr class="${r.status==='Delayed'?'row-danger':r.status==='Pending'?'row-warn':'row-success'}">
+          <td style="font-weight:600">${esc(r.clientName)}</td>
+          <td>${svcBadge(r.service)}</td>
+          <td><span class="badge ${r.reportType==='Weekly'?'b-vip':'b-blue'}">${r.reportType}</span></td>
+          <td style="font-family:var(--mono);font-size:12px">${r.dueDate}</td>
+          <td style="font-family:var(--mono);font-size:12px;color:var(--muted)">${r.submittedDate||'—'}</td>
+          <td>${reportStatusBadge(r.status)}</td>
+          <td style="font-size:12px">${esc(r.accountManager)}</td>
+          <td>
+            ${r.status!=='Submitted'?`<button class="btn btn-save" style="padding:4px 10px;font-size:11px" onclick="markReportSubmitted('${r.id}')">✓ Submit</button>`:''}
+          </td>
+        </tr>`).join('') : `<tr><td colspan="8"><div class="empty"><div class="empty-icon">📄</div>No reports found</div></td></tr>`}
+      </tbody>
+    </table></div>
+    ${renderPagination(f.page, pages, "STATE.filters.reports.page=N;renderReports()", total)}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  FOLLOW-UPS
+// ══════════════════════════════════════════════════════════
+function renderFollowups() {
+  const f = STATE.filters.followups;
+  let rows = [...STATE.followups];
+  if (f.status !== 'All')  rows = rows.filter(r => r.status === f.status);
+  if (f.manager !== 'All') rows = rows.filter(r => r.accountManagerId === f.manager);
+  rows.sort((a, b) => a.nextFollowup > b.nextFollowup ? 1 : -1);
+
+  const total = rows.length;
+  const pages = Math.ceil(total / STATE.PER_PAGE) || 1;
+  if (f.page > pages) f.page = pages;
+  const slice = rows.slice((f.page - 1) * STATE.PER_PAGE, f.page * STATE.PER_PAGE);
+  const mgrOptions = STATE.team.map(t => `<option value="${t.id}" ${f.manager === t.id ? 'selected' : ''}>${t.name}</option>`).join('');
+  const todayN  = rows.filter(r => r.status === 'Today').length;
+  const missedN = rows.filter(r => r.status === 'Missed').length;
+
+  const el = document.getElementById('content');
+  el.innerHTML = `
+  ${missedN > 0 ? `<div class="alert-bar alert-danger">${iconWarn()} ${missedN} missed follow-up${missedN>1?'s':''}</div>` : ''}
+  <div class="stat-grid g-3" style="margin-bottom:16px">
+    ${statCard("Today", todayN, 'Due today', 'si-warn', iconCalendar())}
+    ${statCard('Upcoming', rows.filter(r=>r.status==='Upcoming').length, 'Scheduled', 'si-blue', iconClock())}
+    ${statCard('Missed', missedN, 'Overdue', 'si-danger', iconWarnBig())}
+  </div>
+  <div class="tbl-wrap">
+    <div class="tbl-head">
+      <div class="tbl-title">Follow-ups <span style="color:var(--muted);font-weight:400">(${total})</span></div>
+      <div class="tbl-controls">
+        ${sel('Status', ['All','Today','Upcoming','Missed','Done'], f.status, "STATE.filters.followups.status=this.value;STATE.filters.followups.page=1;renderFollowups()")}
+        <select onchange="STATE.filters.followups.manager=this.value;STATE.filters.followups.page=1;renderFollowups()">
+          <option value="All">All Managers</option>${mgrOptions}
+        </select>
+      </div>
+    </div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Client</th><th>Service</th><th>Manager</th><th>Last Contact</th><th>Next Follow-up</th><th>Method</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        ${slice.length ? slice.map(fu => `<tr class="${fu.status==='Missed'?'row-danger':fu.status==='Today'?'row-warn':''}">
+          <td style="font-weight:600">${esc(fu.clientName)}</td>
+          <td>${svcBadge(fu.service)}</td>
+          <td style="font-size:12px">${esc(fu.accountManager)}</td>
+          <td style="font-family:var(--mono);font-size:12px;color:var(--muted)">${fu.lastContact||'—'}</td>
+          <td style="font-family:var(--mono);font-size:12px;font-weight:600">${fu.nextFollowup||'—'}</td>
+          <td><span class="badge b-normal">${fu.method}</span></td>
+          <td>${fuStatusBadge(fu.status)}</td>
+          <td>
+            ${fu.status!=='Done'?`<button class="btn btn-save" style="padding:4px 10px;font-size:11px" onclick="markFollowupDone('${fu.id}')">✓ Done</button>`:'<span style="color:var(--success);font-size:12px">✓</span>'}
+          </td>
+        </tr>`).join('') : `<tr><td colspan="8"><div class="empty"><div class="empty-icon">📅</div>No follow-ups found</div></td></tr>`}
+      </tbody>
+    </table></div>
+    ${renderPagination(f.page, pages, "STATE.filters.followups.page=N;renderFollowups()", total)}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  RENEWALS
+// ══════════════════════════════════════════════════════════
+function renderRenewals() {
+  const f = STATE.filters.renewals;
+  const todayStr = today();
+  let rows = STATE.clients.map(c => {
+    const dl = daysDiff(c.renewalDate);
+    const status = dl < 0 ? 'Expired' : dl <= 7 ? 'Due Soon' : dl <= 30 ? 'Upcoming' : 'On Track';
+    return { ...c, daysLeft: dl, renewStatus: status };
+  }).sort((a, b) => a.daysLeft - b.daysLeft);
+
+  if (f.status !== 'All') rows = rows.filter(r => r.renewStatus === f.status);
+
+  const total = rows.length;
+  const pages = Math.ceil(total / STATE.PER_PAGE) || 1;
+  if (f.page > pages) f.page = pages;
+  const slice = rows.slice((f.page - 1) * STATE.PER_PAGE, f.page * STATE.PER_PAGE);
+
+  const el = document.getElementById('content');
+  el.innerHTML = `
+  <div class="stat-grid g-4" style="margin-bottom:16px">
+    ${statCard('Expired', rows.filter(r=>r.renewStatus==='Expired').length, 'Past renewal date', 'si-danger', iconWarnBig())}
+    ${statCard('Due in 7 Days', rows.filter(r=>r.renewStatus==='Due Soon').length, 'Urgent', 'si-danger', iconClock())}
+    ${statCard('Due in 30 Days', rows.filter(r=>r.renewStatus==='Upcoming').length, 'Plan ahead', 'si-warn', iconClock())}
+    ${statCard('On Track', rows.filter(r=>r.renewStatus==='On Track').length, 'All good', 'si-green', iconCheck())}
+  </div>
+  <div class="tbl-wrap">
+    <div class="tbl-head">
+      <div class="tbl-title">Renewals <span style="color:var(--muted);font-weight:400">(${total})</span></div>
+      <div class="tbl-controls">
+        ${sel('Status', ['All','Expired','Due Soon','Upcoming','On Track'], f.status, "STATE.filters.renewals.status=this.value;STATE.filters.renewals.page=1;renderRenewals()")}
+      </div>
+    </div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>Client</th><th>Company</th><th>Service</th><th>Manager</th><th>Renewal Date</th><th>Days</th><th>Renewal Type</th><th>Priority</th><th>Status</th></tr></thead>
+      <tbody>
+        ${slice.map(c => `<tr class="${c.daysLeft<0?'row-danger':c.daysLeft<=7?'row-warn':c.daysLeft<=30?'':''}">
+          <td style="font-weight:600">${esc(c.clientName)}</td>
+          <td style="color:var(--muted)">${esc(c.companyName)}</td>
+          <td>${svcBadge(c.service)}</td>
+          <td style="font-size:12px">${esc(c.accountManager)}</td>
+          <td style="font-family:var(--mono);font-size:12px">${c.renewalDate}</td>
+          <td style="font-family:var(--mono);font-weight:700;color:${c.daysLeft<0?'var(--danger)':c.daysLeft<=7?'var(--danger)':c.daysLeft<=30?'var(--warn)':'var(--success)'}">${c.daysLeft<0?Math.abs(c.daysLeft)+'d overdue':c.daysLeft+'d'}</td>
+          <td style="font-size:12px;color:var(--muted)">${c.renewalType}</td>
+          <td>${prioBadge(c.priority)}</td>
+          <td>${renewBadge(c.renewStatus)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+    ${renderPagination(f.page, pages, "STATE.filters.renewals.page=N;renderRenewals()", total)}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  CONTRACTS
+// ══════════════════════════════════════════════════════════
+function renderContracts() {
+  const f = STATE.filters.contracts;
+  let rows = [...STATE.contracts];
+  if (f.search)          rows = rows.filter(r => `${r.clientName} ${r.clientId}`.toLowerCase().includes(f.search.toLowerCase()));
+  if (f.status !== 'All')  rows = rows.filter(r => r.contractStatus === f.status);
+  if (f.payment !== 'All') rows = rows.filter(r => r.paymentStatus  === f.payment);
+
+  const total = rows.length;
+  const pages = Math.ceil(total / STATE.PER_PAGE) || 1;
+  if (f.page > pages) f.page = pages;
+  const slice = rows.slice((f.page - 1) * STATE.PER_PAGE, f.page * STATE.PER_PAGE);
+
+  const active     = STATE.contracts.filter(c => c.contractStatus === 'Active').length;
+  const lost       = STATE.contracts.filter(c => c.contractStatus === 'Lost').length;
+  const renewed    = STATE.contracts.filter(c => c.contractStatus === 'Renewed').length;
+  const overduePay = STATE.contracts.filter(c => c.paymentStatus  === 'Overdue').length;
+  const totalRev   = STATE.contracts.reduce((s, c) => s + (c.paidAmount||0), 0);
+  const totalRem   = STATE.contracts.filter(c => c.paymentStatus !== 'Paid').reduce((s, c) => s + (c.remaining||0), 0);
+  const fmtEGP = n => 'EGP ' + Math.round(n).toLocaleString('en');
+
+  const el = document.getElementById('content');
+  el.innerHTML = `
+  ${overduePay > 0 ? `<div class="alert-bar alert-danger">${iconWarn()} ${overduePay} clients with overdue payments — ${fmtEGP(totalRem)} uncollected</div>` : ''}
+  ${lost > 0 ? `<div class="alert-bar alert-warn">${iconWarn()} ${lost} lost client${lost>1?'s':''} — review with Head of Account</div>` : ''}
+  <div class="stat-grid g-5" style="margin-bottom:12px">
+    ${statCard('Active', active, 'Running contracts', 'si-green', iconCheck())}
+    ${statCard('Renewed', renewed, fmtEGP(STATE.contracts.filter(c=>c.contractStatus==='Renewed').reduce((s,c)=>s+(c.totalValue||0),0)), 'si-vip', iconRefresh())}
+    ${statCard('Lost', lost, 'Lost clients', 'si-danger', iconX())}
+    ${statCard('Overdue Pay', overduePay, fmtEGP(totalRem)+' remaining', 'si-danger', iconMoney())}
+    ${statCard('On Hold', STATE.contracts.filter(c=>c.contractStatus==='On Hold').length, 'Paused', 'si-warn', iconClock())}
+  </div>
+  <div class="stat-grid g-3" style="margin-bottom:16px">
+    ${statCard('Total Collected', fmtEGP(totalRev), 'All-time paid amount', 'si-green', iconMoney())}
+    ${statCard('Monthly Revenue', fmtEGP(STATE.dashboard?.monthlyRevenue||0), 'From active contracts', 'si-blue', iconMoney())}
+    ${statCard('Total Remaining', fmtEGP(totalRem), 'Unpaid invoices', 'si-danger', iconMoney())}
+  </div>
+  <div class="chart-grid" style="margin-bottom:16px">
+    <div class="card"><div class="card-head"><div class="card-title">Contract Status</div></div><div style="height:180px;position:relative"><canvas id="cch1"></canvas></div></div>
+    <div class="card"><div class="card-head"><div class="card-title">Payment Status</div></div><div style="height:180px;position:relative"><canvas id="cch2"></canvas></div></div>
+  </div>
+  <div class="tbl-wrap">
+    <div class="tbl-head">
+      <div class="tbl-title">Contracts Registry <span style="color:var(--muted);font-weight:400">(${total})</span></div>
+      <div class="tbl-controls">
+        <input type="text" placeholder="Search client…" value="${esc(f.search)}" oninput="STATE.filters.contracts.search=this.value;STATE.filters.contracts.page=1;renderContracts()">
+        ${sel('Status', ['All','Active','On Hold','Renewed','Lost','Cancelled'], f.status, "STATE.filters.contracts.status=this.value;STATE.filters.contracts.page=1;renderContracts()")}
+        ${sel('Payment', ['All','Paid','Pending','Overdue','Partially Paid'], f.payment, "STATE.filters.contracts.payment=this.value;STATE.filters.contracts.page=1;renderContracts()")}
+      </div>
+    </div>
+    <div class="tbl-scroll"><table>
+      <thead><tr>
+        <th>Client</th><th>Service</th><th>Manager</th><th>Contract</th><th>Payment Type</th>
+        <th>Renewal</th><th>Next Payment</th><th>Payment</th>
+        <th>Total</th><th>Paid</th><th>Remaining</th><th>Lost Reason</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+        ${slice.length ? slice.map(c => `<tr class="${c.paymentStatus==='Overdue'||c.contractStatus==='Lost'?'row-danger':c.contractStatus==='On Hold'?'row-warn':''}">
+          <td style="font-weight:600">${esc(c.clientName)}${c.priority==='VIP'?` <span class="badge b-vip" style="font-size:9px;padding:1px 5px">VIP</span>`:''}}</td>
+          <td>${svcBadge(c.service)}</td>
+          <td style="font-size:12px">${esc(c.accountManager)}</td>
+          <td>${contractStatusBadge(c.contractStatus)}</td>
+          <td style="font-size:11.5px;color:var(--muted)">${c.paymentType}</td>
+          <td style="font-family:var(--mono);font-size:12px">${c.renewalDate||'—'}</td>
+          <td style="font-family:var(--mono);font-size:12px;font-weight:600;color:${c.nextPayDate && c.nextPayDate < today()?'var(--danger)':'var(--text)'}">${c.nextPayDate||'—'}</td>
+          <td>${payStatusBadge(c.paymentStatus)}</td>
+          <td style="font-family:var(--mono);font-size:12px">EGP ${(c.totalValue||0).toLocaleString()}</td>
+          <td style="font-family:var(--mono);font-size:12px;color:var(--success)">EGP ${(c.paidAmount||0).toLocaleString()}</td>
+          <td style="font-family:var(--mono);font-size:12px;color:${(c.remaining||0)>0?'var(--danger)':'var(--success)'};font-weight:600">EGP ${(c.remaining||0).toLocaleString()}</td>
+          <td style="font-size:11.5px;color:var(--danger);max-width:130px;overflow:hidden;text-overflow:ellipsis">${esc(c.lostReason)||'—'}</td>
+          <td><button class="btn btn-cancel" style="padding:4px 10px;font-size:11px" onclick='openEditContract(${JSON.stringify(c)})'>Edit</button></td>
+        </tr>`).join('') : `<tr><td colspan="13"><div class="empty"><div class="empty-icon">📋</div>No contracts found</div></td></tr>`}
+      </tbody>
+    </table></div>
+    ${renderPagination(f.page, pages, "STATE.filters.contracts.page=N;renderContracts()", total)}
+  </div>`;
+
+  setTimeout(() => {
+    const cStatuses = ['Active','Renewed','Lost','On Hold','Cancelled'];
+    mkChart('cch1','doughnut', cStatuses,
+      [{ data: cStatuses.map(s => STATE.contracts.filter(c=>c.contractStatus===s).length),
+         backgroundColor: ['#059669','#7c3aed','#dc2626','#d97706','#94a3b8'], borderWidth:2 }],
+      { legend:'right' });
+    const pStatuses = ['Paid','Pending','Overdue','Partially Paid'];
+    mkChart('cch2','bar', pStatuses,
+      [{ data: pStatuses.map(s => STATE.contracts.filter(c=>c.paymentStatus===s).length),
+         backgroundColor:['#059669','#d97706','#dc2626','#2563eb'], borderRadius:4 }],
+      { legend:false });
+  }, 80);
+}
+
+// ══════════════════════════════════════════════════════════
+//  PERFORMANCE
+// ══════════════════════════════════════════════════════════
+function renderPerformance() {
+  const d = STATE.dashboard;
+  const el = document.getElementById('content');
+  if (!d || !d.managerStats) { el.innerHTML = loader(); return; }
+
+  const mgrStats = d.managerStats.map(m => {
+    const score = Math.min(100, Math.round(
+      (m.clients / (m.capacity || 10)) * 40 +
+      (m.submitted / Math.max(m.submitted + m.delayed + m.pending, 1)) * 60
+    ));
+    return { ...m, score };
+  }).sort((a, b) => b.score - a.score);
+
+  el.innerHTML = `
+  <div class="chart-grid" style="margin-bottom:16px">
+    <div class="card"><div class="card-head"><div class="card-title">Clients per Manager</div></div><div style="height:200px;position:relative"><canvas id="p1"></canvas></div></div>
+    <div class="card"><div class="card-head"><div class="card-title">Report Completion Rate</div></div><div style="height:200px;position:relative"><canvas id="p2"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="card-title">Manager Scorecard</div></div>
+    ${mgrStats.map((m, i) => `
+    <div class="mgr-row">
+      <div class="mgr-av" style="background:${PALETTE[i % PALETTE.length]}">${m.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
+      <div class="mgr-info">
+        <div class="mgr-name">${m.name} <span style="font-size:11px;color:var(--muted);font-weight:400">${m.role}</span></div>
+        <div class="mgr-sub">Score: ${m.score}% · Capacity: ${m.clients}/${m.capacity}</div>
+        <div class="pbar"><div class="pfill" style="width:${m.score}%;background:${m.score>=80?'var(--success)':m.score>=60?'var(--warn)':'var(--danger)'}"></div></div>
+      </div>
+      <div class="mgr-nums">
+        <div class="mgr-num"><div class="mgr-num-val">${m.clients}</div><div class="mgr-num-lbl">Clients</div></div>
+        <div class="mgr-num"><div class="mgr-num-val" style="color:var(--vip)">${m.vip}</div><div class="mgr-num-lbl">VIP</div></div>
+        <div class="mgr-num"><div class="mgr-num-val" style="color:var(--success)">${m.submitted}</div><div class="mgr-num-lbl">Submitted</div></div>
+        <div class="mgr-num"><div class="mgr-num-val" style="color:var(--danger)">${m.delayed}</div><div class="mgr-num-lbl">Delayed</div></div>
+      </div>
+    </div>`).join('')}
+  </div>`;
+
+  setTimeout(() => {
+    const names  = mgrStats.map(m => m.name.split(' ')[0]);
+    const colors = mgrStats.map((_, i) => PALETTE[i % PALETTE.length]);
+    mkChart('p1','bar', names, [{ label:'Clients', data: mgrStats.map(m=>m.clients), backgroundColor: colors, borderRadius:4 }], { legend:false });
+    const rates = mgrStats.map(m => Math.round(m.submitted / Math.max(m.submitted+m.delayed+m.pending,1) * 100));
+    mkChart('p2','bar', names, [{
+      label:'Completion %',
+      data: rates,
+      backgroundColor: rates.map(r => r>=80?'#059669':r>=60?'#d97706':'#dc2626'),
+      borderRadius:4
+    }], { legend:false, yMax:100, yCallback: v=>v+'%' });
+  }, 80);
+}
+
+// ══════════════════════════════════════════════════════════
+//  TEAM
+// ══════════════════════════════════════════════════════════
+function renderTeam() {
+  const rows = STATE.team;
+  const el = document.getElementById('content');
+  el.innerHTML = `
+  <div class="tbl-wrap">
+    <div class="tbl-head"><div class="tbl-title">Team (${rows.length})</div></div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>ID</th><th>Name</th><th>Role</th><th>Email</th><th>Phone</th><th>Capacity</th><th>Clients</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        ${rows.length ? rows.map((m, i) => {
+          const mClients = STATE.clients.filter(c => c.accountManagerId === m.id).length;
+          return `<tr>
+            <td style="font-family:var(--mono);font-size:12px;color:var(--accent)">${m.id}</td>
+            <td style="font-weight:600">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:28px;height:28px;border-radius:50%;background:${PALETTE[i%PALETTE.length]};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">${m.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
+                ${esc(m.name)}
+              </div>
+            </td>
+            <td><span class="badge ${m.role==='Head of Account'?'b-vip':m.role==='Team Leader'?'b-partial':m.role==='Senior Account Manager'?'b-active':'b-normal'}">${m.role}</span></td>
+            <td style="font-size:12px;color:var(--muted)">${esc(m.email)}</td>
+            <td style="font-size:12px;color:var(--muted)">${esc(m.phone||'—')}</td>
+            <td style="font-family:var(--mono)">${m.capacity}</td>
+            <td style="font-family:var(--mono);color:${mClients>m.capacity?'var(--danger)':'var(--text)'}">
+              ${mClients}${mClients>m.capacity?` <span style="font-size:10px;color:var(--danger)">(+${mClients-m.capacity} over)</span>`:''}
+            </td>
+            <td>${m.active?'<span class="badge b-active">Active</span>':'<span class="badge b-inactive">Inactive</span>'}</td>
+            <td><button class="btn btn-cancel" style="padding:4px 10px;font-size:11px" onclick='openEditTeam(${JSON.stringify(m)})'>Edit</button></td>
+          </tr>`;
+        }).join('') : `<tr><td colspan="9"><div class="empty"><div class="empty-icon">👥</div>No team members found</div></td></tr>`}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODALS — ADD / EDIT
+// ══════════════════════════════════════════════════════════
+function openAddModal(page) {
+  if (page === 'clients')    openAddClientModal();
+  else if (page === 'reports')    openAddReportModal();
+  else if (page === 'followups')  openAddFollowUpModal();
+  else if (page === 'contracts')  openAddContractModal();
+  else if (page === 'team')       openAddTeamModal();
+}
+
+function mgrOptions() {
+  return STATE.team.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+}
+
+// ── ADD CLIENT ─────────────────────────────────────────────
+function openAddClientModal() {
+  setModal(`Add New Client`,`
+  <div class="form-grid">
+    <div class="form-field"><div class="form-label">Client Name *</div><input id="f-cname" type="text" placeholder="Full name"></div>
+    <div class="form-field"><div class="form-label">Company</div><input id="f-company" type="text" placeholder="Company name"></div>
+    <div class="form-field"><div class="form-label">Phone</div><input id="f-phone" type="text" placeholder="01xxxxxxxxx"></div>
+    <div class="form-field"><div class="form-label">Role at Company</div><input id="f-role" type="text" placeholder="CEO, Marketing Dir…"></div>
+    <div class="form-field"><div class="form-label">Service *</div>
+      <select id="f-service"><option>SEO</option><option>Social Media</option><option>Ads</option><option>Website</option><option>قوة العراب</option></select></div>
+    <div class="form-field"><div class="form-label">Package</div>
+      <select id="f-package"><option>Basic</option><option>Standard</option><option>Premium</option></select></div>
+    <div class="form-field"><div class="form-label">Priority</div>
+      <select id="f-priority"><option>Normal</option><option>VIP</option></select></div>
+    <div class="form-field"><div class="form-label">Account Manager *</div>
+      <select id="f-mgr">${mgrOptions()}</select></div>
+    <div class="form-field"><div class="form-label">Renewal Type *</div>
+      <select id="f-renewal"><option>Monthly</option><option>1.5 Month</option><option>2 Months</option><option>3 Months</option><option>6 Months</option><option>Yearly</option></select></div>
+    <div class="form-field"><div class="form-label">Monthly Fee (EGP)</div><input id="f-fee" type="number" placeholder="5000"></div>
+    <div class="form-field"><div class="form-label">Start Date *</div><input id="f-start" type="date" value="${today()}"></div>
+    <div class="form-field"><div class="form-label">Next Follow-up</div><input id="f-followup" type="date"></div>
+    <div class="form-field full"><div class="form-label">Notes</div><textarea id="f-notes" rows="2" placeholder="Any notes…"></textarea></div>
+  </div>`, saveClient);
+}
+
+async function saveClient() {
+  const mgrId   = v('f-mgr');
+  const mgrObj  = STATE.team.find(t => t.id === mgrId);
+  const data = {
+    clientName:       v('f-cname'),
+    companyName:      v('f-company'),
+    phone:            v('f-phone'),
+    clientRole:       v('f-role'),
+    service:          v('f-service'),
+    package:          v('f-package'),
+    priority:         v('f-priority'),
+    accountManagerId: mgrId,
+    accountManager:   mgrObj?.name || '',
+    renewalType:      v('f-renewal'),
+    monthlyFee:       v('f-fee'),
+    startDate:        v('f-start'),
+    nextFollowup:     v('f-followup'),
+    notes:            v('f-notes')
+  };
+  if (!data.clientName || !data.service || !data.startDate) { toast('Fill required fields *', 'error'); return; }
+  try {
+    await apiPost('addClient', { data });
+    toast('Client added ✓', 'success');
+    closeModal();
+    await syncData();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ── EDIT CLIENT ────────────────────────────────────────────
+function openEditClient(c) {
+  setModal(`Edit — ${c.clientName}`,`
+  <div class="form-grid">
+    <div class="form-field"><div class="form-label">Client Name</div><input id="f-cname" type="text" value="${esc(c.clientName)}"></div>
+    <div class="form-field"><div class="form-label">Company</div><input id="f-company" type="text" value="${esc(c.companyName)}"></div>
+    <div class="form-field"><div class="form-label">Service</div>
+      <select id="f-service">${['SEO','Social Media','Ads','Website','قوة العراب'].map(s=>`<option ${c.service===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="form-field"><div class="form-label">Package</div>
+      <select id="f-package">${['Basic','Standard','Premium'].map(s=>`<option ${c.package===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="form-field"><div class="form-label">Priority</div>
+      <select id="f-priority"><option ${c.priority==='Normal'?'selected':''}>Normal</option><option ${c.priority==='VIP'?'selected':''}>VIP</option></select></div>
+    <div class="form-field"><div class="form-label">Account Manager</div>
+      <select id="f-mgr">${STATE.team.map(t=>`<option value="${t.id}" ${t.id===c.accountManagerId?'selected':''}>${t.name}</option>`).join('')}</select></div>
+    <div class="form-field"><div class="form-label">Status</div>
+      <select id="f-status"><option ${c.status==='Active'?'selected':''}>Active</option><option ${c.status==='Inactive'?'selected':''}>Inactive</option></select></div>
+    <div class="form-field"><div class="form-label">Monthly Fee (EGP)</div><input id="f-fee" type="number" value="${c.monthlyFee||0}"></div>
+    <div class="form-field"><div class="form-label">Renewal Type</div>
+      <select id="f-renewal">${['Monthly','1.5 Month','2 Months','3 Months','6 Months','Yearly'].map(s=>`<option ${c.renewalType===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="form-field"><div class="form-label">Renewal Date</div><input id="f-renewaldate" type="date" value="${c.renewalDate||''}"></div>
+    <div class="form-field"><div class="form-label">Next Follow-up</div><input id="f-followup" type="date" value="${c.nextFollowup||''}"></div>
+    <div class="form-field"><div class="form-label">Last Contact</div><input id="f-lastcontact" type="date" value="${c.lastContact||''}"></div>
+    <div class="form-field full"><div class="form-label">Notes</div><textarea id="f-notes" rows="2">${esc(c.notes||'')}</textarea></div>
+  </div>
+  <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:8px">
+    <button class="btn btn-danger" onclick="deleteClientConfirm('${c.id}','${esc(c.clientName)}')">Delete Client</button>
+  </div>`,
+  async () => {
+    const mgrId = v('f-mgr');
+    const mgrObj = STATE.team.find(t => t.id === mgrId);
+    await apiPost('updateClient', {
+      id: c.id,
+      data: {
+        clientName: v('f-cname'), companyName: v('f-company'),
+        service: v('f-service'), package: v('f-package'), priority: v('f-priority'),
+        accountManagerId: mgrId, accountManager: mgrObj?.name||'',
+        status: v('f-status'), monthlyFee: v('f-fee'),
+        renewalType: v('f-renewal'), renewalDate: v('f-renewaldate'),
+        nextFollowup: v('f-followup'), lastContact: v('f-lastcontact'),
+        notes: v('f-notes')
+      }
+    });
+    toast('Client updated ✓', 'success');
+    closeModal();
+    await syncData();
+  });
+}
+
+async function deleteClientConfirm(id, name) {
+  if (!confirm(`Delete "${name}"?\n\nThis cannot be undone.`)) return;
+  try {
+    await apiPost('deleteClient', { id });
+    toast('Client deleted', 'info');
+    closeModal();
+    await syncData();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ── EDIT CONTRACT ──────────────────────────────────────────
+function openEditContract(c) {
+  setModal(`Contract — ${c.clientName}`,`
+  <div class="form-grid">
+    <div class="form-field"><div class="form-label">Contract Status</div>
+      <select id="fc-status">${['Active','On Hold','Renewed','Lost','Cancelled'].map(s=>`<option ${c.contractStatus===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="form-field"><div class="form-label">Payment Type</div>
+      <select id="fc-ptype">${['Full Payment','Installments','Monthly Payment','Quarterly','Yearly'].map(s=>`<option ${c.paymentType===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="form-field"><div class="form-label">Total Contract Value (EGP)</div><input id="fc-total" type="number" value="${c.totalValue||0}"></div>
+    <div class="form-field"><div class="form-label">Paid Amount (EGP)</div><input id="fc-paid" type="number" value="${c.paidAmount||0}"></div>
+    <div class="form-field"><div class="form-label">Last Payment Date</div><input id="fc-lastpay" type="date" value="${c.lastPayDate||''}"></div>
+    <div class="form-field"><div class="form-label">Next Payment Due</div><input id="fc-nextpay" type="date" value="${c.nextPayDate||''}"></div>
+    <div class="form-field"><div class="form-label">Renewal Date</div><input id="fc-renewal" type="date" value="${c.renewalDate||''}"></div>
+    <div class="form-field"><div class="form-label">Next Renewal Date</div><input id="fc-nextrenewal" type="date" value="${c.nextRenewalDate||''}"></div>
+    <div class="form-field full"><div class="form-label">Lost Reason (if applicable)</div><input id="fc-lostreason" type="text" value="${esc(c.lostReason||'')}"></div>
+    <div class="form-field full"><div class="form-label">Notes</div><textarea id="fc-notes" rows="2">${esc(c.notes||'')}</textarea></div>
+  </div>`,
+  async () => {
+    await apiPost('updateContract', {
+      id: c.id,
+      data: {
+        contractStatus: v('fc-status'), paymentType: v('fc-ptype'),
+        totalValue: v('fc-total'), paidAmount: v('fc-paid'),
+        lastPayDate: v('fc-lastpay'), nextPayDate: v('fc-nextpay'),
+        renewalDate: v('fc-renewal'), nextRenewalDate: v('fc-nextrenewal'),
+        lostReason: v('fc-lostreason'), notes: v('fc-notes'),
+        clientName: c.clientName
+      }
+    });
+    toast('Contract updated ✓', 'success');
+    closeModal();
+    await syncData();
+  });
+}
+
+// ── ADD REPORT ─────────────────────────────────────────────
+function openAddReportModal() {
+  setModal('Add Report', `
+  <div class="form-grid">
+    <div class="form-field"><div class="form-label">Client</div>
+      <select id="f-rclient"><option value="">Select client…</option>${STATE.clients.map(c=>`<option value="${c.id}|${c.service}|${c.accountManagerId}|${c.accountManager}">${c.clientName} (${c.service})</option>`).join('')}</select></div>
+    <div class="form-field"><div class="form-label">Report Type</div>
+      <select id="f-rtype"><option>Weekly</option><option>Monthly</option></select></div>
+    <div class="form-field"><div class="form-label">Due Date</div><input id="f-rdue" type="date"></div>
+    <div class="form-field"><div class="form-label">Period (e.g. Week 3)</div><input id="f-rperiod" type="text" placeholder="Week 3 / April 2025"></div>
+    <div class="form-field full"><div class="form-label">Notes</div><textarea id="f-rnotes" rows="2"></textarea></div>
+  </div>`,
+  async () => {
+    const sel = v('f-rclient').split('|');
+    if (!sel[0]) { toast('Select a client', 'error'); return; }
+    const [cid, csvc, cmgrid, cmgr] = sel;
+    const cObj = STATE.clients.find(c => c.id === cid);
+    await apiPost('addReport', { data: {
+      clientId: cid, clientName: cObj?.clientName||'', service: csvc,
+      reportType: v('f-rtype'), dueDate: v('f-rdue'),
+      accountManagerId: cmgrid, accountManager: cmgr,
+      period: v('f-rperiod'), notes: v('f-rnotes')
+    }});
+    toast('Report added ✓', 'success');
+    closeModal(); await syncData();
+  });
+}
+
+// ── ADD FOLLOW-UP ──────────────────────────────────────────
+function openAddFollowUpModal() {
+  setModal('Add Follow-up', `
+  <div class="form-grid">
+    <div class="form-field"><div class="form-label">Client</div>
+      <select id="f-fuclient"><option value="">Select client…</option>${STATE.clients.map(c=>`<option value="${c.id}|${c.service}|${c.accountManagerId}|${c.accountManager}|${c.clientName}">${c.clientName}</option>`).join('')}</select></div>
+    <div class="form-field"><div class="form-label">Method</div>
+      <select id="f-fumethod"><option>Phone</option><option>WhatsApp</option><option>Email</option><option>Meeting</option></select></div>
+    <div class="form-field"><div class="form-label">Last Contact Date</div><input id="f-fulast" type="date" value="${today()}"></div>
+    <div class="form-field"><div class="form-label">Next Follow-up Date</div><input id="f-funext" type="date"></div>
+    <div class="form-field full"><div class="form-label">Notes</div><textarea id="f-funotes" rows="2"></textarea></div>
+  </div>`,
+  async () => {
+    const sel = v('f-fuclient').split('|');
+    if (!sel[0]) { toast('Select a client', 'error'); return; }
+    const [cid, csvc, cmgrid, cmgr, cname] = sel;
+    if (!v('f-funext')) { toast('Set next follow-up date', 'error'); return; }
+    await apiPost('addFollowUp', { data: {
+      clientId: cid, clientName: cname, service: csvc,
+      accountManagerId: cmgrid, accountManager: cmgr,
+      lastContact: v('f-fulast'), nextFollowup: v('f-funext'),
+      method: v('f-fumethod'), notes: v('f-funotes')
+    }});
+    toast('Follow-up added ✓', 'success');
+    closeModal(); await syncData();
+  });
+}
+
+// ── ADD CONTRACT ───────────────────────────────────────────
+function openAddContractModal() {
+  setModal('Add Contract', `
+  <div class="form-grid">
+    <div class="form-field"><div class="form-label">Client</div>
+      <select id="f-cnclient"><option value="">Select client…</option>${STATE.clients.map(c=>`<option value="${c.id}|${c.service}|${c.accountManagerId}|${c.accountManager}|${c.clientName}|${c.priority}">${c.clientName} (${c.service})</option>`).join('')}</select></div>
+    <div class="form-field"><div class="form-label">Contract Status</div>
+      <select id="f-cnstatus"><option>Active</option><option>On Hold</option><option>Renewed</option></select></div>
+    <div class="form-field"><div class="form-label">Payment Type</div>
+      <select id="f-cnptype"><option>Full Payment</option><option>Installments</option><option>Monthly Payment</option><option>Quarterly</option><option>Yearly</option></select></div>
+    <div class="form-field"><div class="form-label">Total Contract Value (EGP)</div><input id="f-cntotal" type="number" placeholder="50000"></div>
+    <div class="form-field"><div class="form-label">Paid Amount (EGP)</div><input id="f-cnpaid" type="number" placeholder="0" value="0"></div>
+    <div class="form-field"><div class="form-label">Renewal Date</div><input id="f-cnrenewal" type="date"></div>
+    <div class="form-field"><div class="form-label">Next Payment Due</div><input id="f-cnnextpay" type="date"></div>
+    <div class="form-field full"><div class="form-label">Notes</div><textarea id="f-cnnotes" rows="2"></textarea></div>
+  </div>`,
+  async () => {
+    const sel = v('f-cnclient').split('|');
+    if (!sel[0]) { toast('Select a client', 'error'); return; }
+    const [cid, csvc, cmgrid, cmgr, cname, cprio] = sel;
+    await apiPost('addContract', { data: {
+      clientId: cid, clientName: cname, service: csvc,
+      accountManagerId: cmgrid, accountManager: cmgr, priority: cprio,
+      contractStatus: v('f-cnstatus'), paymentType: v('f-cnptype'),
+      totalValue: v('f-cntotal'), paidAmount: v('f-cnpaid'),
+      renewalDate: v('f-cnrenewal'), nextPayDate: v('f-cnnextpay'),
+      notes: v('f-cnnotes')
+    }});
+    toast('Contract added ✓', 'success');
+    closeModal(); await syncData();
+  });
+}
+
+// ── ADD TEAM ───────────────────────────────────────────────
+function openAddTeamModal() {
+  setModal('Add Team Member', `
+  <div class="form-grid">
+    <div class="form-field"><div class="form-label">Name *</div><input id="f-tname" type="text" placeholder="Full name"></div>
+    <div class="form-field"><div class="form-label">Role *</div>
+      <select id="f-trole"><option>Account Manager</option><option>Senior Account Manager</option><option>Team Leader</option><option>Head of Account</option></select></div>
+    <div class="form-field"><div class="form-label">Email</div><input id="f-temail" type="text" placeholder="name@alarrab.com"></div>
+    <div class="form-field"><div class="form-label">Phone</div><input id="f-tphone" type="text" placeholder="01xxxxxxxxx"></div>
+    <div class="form-field"><div class="form-label">Capacity</div><input id="f-tcap" type="number" value="10"></div>
+  </div>`,
+  async () => {
+    if (!v('f-tname')) { toast('Name required', 'error'); return; }
+    await apiPost('addTeamMember', { data: {
+      name: v('f-tname'), role: v('f-trole'),
+      email: v('f-temail'), phone: v('f-tphone'), capacity: v('f-tcap')
+    }});
+    toast('Team member added ✓', 'success');
+    closeModal(); await syncData();
+  });
+}
+
+function openEditTeam(m) {
+  setModal(`Edit — ${m.name}`, `
+  <div class="form-grid">
+    <div class="form-field"><div class="form-label">Name</div><input id="f-tname" type="text" value="${esc(m.name)}"></div>
+    <div class="form-field"><div class="form-label">Role</div>
+      <select id="f-trole">${['Account Manager','Senior Account Manager','Team Leader','Head of Account'].map(r=>`<option ${m.role===r?'selected':''}>${r}</option>`).join('')}</select></div>
+    <div class="form-field"><div class="form-label">Email</div><input id="f-temail" type="text" value="${esc(m.email||'')}"></div>
+    <div class="form-field"><div class="form-label">Phone</div><input id="f-tphone" type="text" value="${esc(m.phone||'')}"></div>
+    <div class="form-field"><div class="form-label">Capacity</div><input id="f-tcap" type="number" value="${m.capacity||10}"></div>
+    <div class="form-field"><div class="form-label">Active</div>
+      <select id="f-tactive"><option value="true" ${m.active?'selected':''}>Active</option><option value="false" ${!m.active?'selected':''}>Inactive</option></select></div>
+  </div>`,
+  async () => {
+    await apiPost('updateTeamMember', { id: m.id, data: {
+      name: v('f-tname'), role: v('f-trole'),
+      email: v('f-temail'), phone: v('f-tphone'),
+      capacity: v('f-tcap'), active: v('f-tactive') === 'true'
+    }});
+    toast('Team member updated ✓', 'success');
+    closeModal(); await syncData();
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  QUICK ACTIONS
+// ══════════════════════════════════════════════════════════
+async function markReportSubmitted(id) {
+  try {
+    await apiPost('updateReport', { id, data: { status: 'Submitted' } });
+    const r = STATE.reports.find(x => x.id === id);
+    if (r) r.status = 'Submitted';
+    renderReports();
+    toast('Report marked submitted ✓', 'success');
+    syncData();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+async function markFollowupDone(id) {
+  try {
+    await apiPost('updateFollowUp', { id, data: { status: 'Done', lastContact: today() } });
+    const f = STATE.followups.find(x => x.id === id);
+    if (f) f.status = 'Done';
+    renderFollowups();
+    toast('Follow-up marked done ✓', 'success');
+    syncData();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODAL HELPERS
+// ══════════════════════════════════════════════════════════
+function setModal(title, bodyHtml, onSave) {
+  document.getElementById('modal-box').innerHTML = `
+    <div class="modal-title">${title} <span class="modal-close" onclick="closeModal()">×</span></div>
+    ${bodyHtml}
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-save" id="modal-save-btn">Save</button>
+    </div>`;
+  document.getElementById('modal-save-btn').onclick = async () => {
+    const btn = document.getElementById('modal-save-btn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try { await onSave(); } catch(e) { toast('Error: ' + e.message, 'error'); btn.disabled=false; btn.textContent='Save'; }
+  };
+  document.getElementById('modal').style.display = 'block';
+}
+
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+// ══════════════════════════════════════════════════════════
+//  CHART HELPER
+// ══════════════════════════════════════════════════════════
+const CHARTS = {};
+function destroyCharts() { Object.values(CHARTS).forEach(c => { try { c.destroy(); } catch(_){} }); Object.keys(CHARTS).forEach(k => delete CHARTS[k]); }
+function mkChart(id, type, labels, datasets, opts = {}) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  CHARTS[id] = new Chart(el, {
+    type,
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: opts.legend === false ? { display: false } : { position: opts.legend || 'top', labels: { font: { size: 10 }, boxWidth: 12 } }
+      },
+      scales: type === 'doughnut' ? undefined : {
+        y: { beginAtZero: true, max: opts.yMax, ticks: { font: { size: 10 }, callback: opts.yCallback } },
+        x: { ticks: { font: { size: 9 } } }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  UI HELPERS
+// ══════════════════════════════════════════════════════════
+function loader() { return `<div class="loader"><div class="spin-ring"></div> Loading…</div>`; }
+function toast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  const item = document.createElement('div');
+  item.className = `toast-item toast-${type}`;
+  item.textContent = msg;
+  el.appendChild(item);
+  setTimeout(() => item.remove(), 3200);
+}
+function setSyncing(on) {
+  const btn = document.getElementById('sync-btn');
+  btn.classList.toggle('syncing', on);
+  btn.textContent = on ? ' Syncing…' : ' Sync';
+}
+function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+function v(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function today() { return new Date().toISOString().slice(0, 10); }
+function daysDiff(d) { if (!d) return 9999; return Math.round((new Date(d) - new Date()) / 86400000); }
+
+function sel(label, opts, current, onchange) {
+  return `<select onchange="${onchange}">${opts.map(o => `<option value="${o}" ${current===o?'selected':''}>${o}</option>`).join('')}</select>`;
+}
+
+function statCard(label, val, sub, iconCls, iconSvg) {
+  return `<div class="stat-card">
+    <div class="stat-icon ${iconCls}">${iconSvg}</div>
+    <div class="stat-label">${label}</div>
+    <div class="stat-val">${val}</div>
+    <div class="stat-sub">${sub}</div>
+  </div>`;
+}
+
+function renderPagination(page, pages, handler, total) {
+  if (pages <= 1) return '';
+  const btns = Array.from({ length: Math.min(pages, 8) }, (_, i) =>
+    `<button class="pg-btn ${i+1===page?'active':''}" onclick="${handler.replace('N', i+1)}">${i+1}</button>`
+  ).join('');
+  return `<div class="pagination">
+    <span>Page ${page} of ${pages} · ${total} records</span>
+    <span style="margin-left:auto;display:flex;gap:4px">${btns}</span>
+  </div>`;
+}
+
+function renderAlertBars(alerts) {
+  if (!alerts.length) return '';
+  return alerts.map(a => `<div class="alert-bar alert-${a.type}">${a.type==='danger'?iconWarn():iconWarn()} ${esc(a.message)}</div>`).join('');
+}
+
+// ── BADGES ────────────────────────────────────────────────
+function svcBadge(s) {
+  const cls = { SEO:'b-seo','Social Media':'b-social',Ads:'b-ads',Website:'b-website','قوة العراب':'b-vip' };
+  return `<span class="badge ${cls[s]||'b-normal'}">${s}</span>`;
+}
+function prioBadge(p) { return `<span class="badge ${p==='VIP'?'b-vip':'b-normal'}">${p}</span>`; }
+function statusBadge(s) { return `<span class="badge ${s==='Active'?'b-active':'b-inactive'}">${s}</span>`; }
+function reportStatusBadge(s) { return `<span class="badge ${s==='Submitted'?'b-submitted':s==='Delayed'?'b-delayed':'b-pending'}">${s}</span>`; }
+function fuStatusBadge(s) { const m={Today:'b-today',Upcoming:'b-upcoming',Missed:'b-missed',Done:'b-done'}; return `<span class="badge ${m[s]||'b-pending'}">${s}</span>`; }
+function renewBadge(s) { const m={Expired:'b-delayed','Due Soon':'b-delayed',Upcoming:'b-pending','On Track':'b-active'}; return `<span class="badge ${m[s]||'b-normal'}">${s}</span>`; }
+function contractStatusBadge(s) {
+  const m={Active:'b-active','On Hold':'b-onhold',Cancelled:'b-cancelled',Lost:'b-lost',Renewed:'b-renewed'};
+  return `<span class="badge ${m[s]||'b-normal'}">${s}</span>`;
+}
+function payStatusBadge(s) {
+  const m={Paid:'b-paid',Pending:'b-pending',Overdue:'b-overdue','Partially Paid':'b-partial'};
+  return `<span class="badge ${m[s]||'b-pending'}">${s}</span>`;
+}
+
+// ── ICONS (inline SVG) ────────────────────────────────────
+const I = `fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"`;
+function iconUsers() { return `<svg ${I}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>`; }
+function iconStar() { return `<svg ${I}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`; }
+function iconRefresh() { return `<svg ${I}><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`; }
+function iconFile() { return `<svg ${I}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`; }
+function iconCalendar() { return `<svg ${I}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`; }
+function iconDoc() { return `<svg ${I}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>`; }
+function iconMoney() { return `<svg ${I}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`; }
+function iconCheck() { return `<svg ${I}><polyline points="20 6 9 17 4 12"/></svg>`; }
+function iconClock() { return `<svg ${I}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`; }
+function iconWarn() { return `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`; }
+function iconWarnBig() { return `<svg ${I}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`; }
+function iconX() { return `<svg ${I}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`; }
+
+// ══════════════════════════════════════════════════════════
+//  CONFIG BANNER (when no API URL set)
+// ══════════════════════════════════════════════════════════
+function renderConfigBanner() {
+  const el = document.getElementById('content');
+  el.innerHTML = `
+  <div style="max-width:600px;margin:40px auto;text-align:center">
+    <div style="font-size:48px;margin-bottom:16px">🔗</div>
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:8px">Connect to Google Sheets</h2>
+    <p style="color:var(--muted);margin-bottom:24px;line-height:1.7">
+      Paste your Apps Script Web App URL below to connect the dashboard to your live Google Sheets database.
+    </p>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <input type="text" id="api-url-input" placeholder="https://script.google.com/macros/s/…/exec" style="min-width:360px;padding:10px 14px;font-size:13px;border:2px solid var(--border);border-radius:var(--r)">
+      <button class="btn btn-save" onclick="setApiUrl()">Connect</button>
+    </div>
+    <div style="margin-top:32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;text-align:left">
+      <div style="font-weight:700;margin-bottom:10px;font-size:13px">Setup Steps:</div>
+      <ol style="color:var(--muted);font-size:13px;line-height:2;padding-left:18px">
+        <li>Open Google Sheets → Extensions → Apps Script</li>
+        <li>Create <strong>Code.gs</strong> and <strong>Setup.gs</strong> — paste the provided code</li>
+        <li>Run <code style="background:var(--bg);padding:1px 6px;border-radius:4px">setupAll()</code> once to build all sheets</li>
+        <li>Deploy → New Deployment → Web App → <strong>Anyone</strong></li>
+        <li>Copy the Web App URL and paste it above</li>
+      </ol>
+    </div>
+  </div>`;
+}
+
+function setApiUrl() {
+  const url = document.getElementById('api-url-input')?.value?.trim();
+  if (!url || !url.startsWith('https://script.google.com')) {
+    toast('Enter a valid Apps Script URL', 'error'); return;
+  }
+  API_URL = url;
+  localStorage.setItem('amms_api_url', url);
+  toast('URL saved — connecting…', 'info');
+  loadAll();
+}
+
+// ══════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════
+document.getElementById('tb-date').textContent =
+  new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+// Show reset URL option
+document.getElementById('sync-btn').addEventListener('contextmenu', e => {
+  e.preventDefault();
+  if (confirm('Reset API URL?')) {
+    localStorage.removeItem('amms_api_url');
+    API_URL = '';
+    renderConfigBanner();
+  }
+});
+
+loadAll();
+</script>
+</body>
+</html>
